@@ -1,0 +1,37 @@
+name: Dynamic Artifact Lab
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-modules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Module Logic
+        id: run_tests
+        run: |
+          mkdir -p logs
+          # Simulation: Identify which part of Academia Synapse 'failed'
+          FAILED_MODULE="auth-service"
+         
+          echo "Simulating failure in $FAILED_MODULE..."
+          echo "Login attempt timed out at $(date)" > logs/error.log
+         
+          # Exporting the variable to the GitHub Output file
+          echo "bad_module=$FAILED_MODULE" >> $GITHUB_OUTPUT
+         
+          # Triggering the failure for the lab
+          exit 1
+
+      - name: Upload Dynamic Error Logs
+        # This step needs 'uses' to know WHAT to do
+        if: failure() && steps.run_tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: error-logs-${{ steps.run_tests.outputs.bad_module }}
+          path: logs/
